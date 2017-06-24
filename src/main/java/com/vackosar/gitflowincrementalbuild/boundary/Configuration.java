@@ -23,6 +23,7 @@ public class Configuration {
     public final boolean enabled;
     public final Optional<Path> key;
     public final String referenceBranch;
+    public final String referenceCommit;
     public String baseBranch;
     public final boolean uncommited;
     public final boolean makeUpstream;
@@ -41,6 +42,7 @@ public class Configuration {
             enabled = Boolean.valueOf(Property.enabled.getValue());
             key = parseKey(session);
             referenceBranch = Property.referenceBranch.getValue();
+            referenceCommit = Property.referenceCommit.getValue();
             baseBranch = Property.baseBranch.getValue();
             uncommited = Boolean.valueOf(Property.uncommited.getValue());
             makeUpstream = alsoMakeBehaviours.contains(session.getRequest().getMakeBehavior());

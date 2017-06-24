@@ -5,6 +5,7 @@ import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
@@ -36,7 +37,17 @@ public class DifferentFiles {
         RevCommit base = getBranchCommit(configuration.baseBranch);
         final TreeWalk treeWalk = new TreeWalk(git.getRepository());
         treeWalk.addTree(base.getTree());
-        treeWalk.addTree(resolveReference(base).getTree());
+        // Use a commit SHA to be reference if it is set; otherwise do default branch reference
+        if (!configuration.referenceCommit.equals("")) {
+            RevWalk walk = new RevWalk(git.getRepository());
+            RevCommit refCommit = walk.parseCommit(ObjectId.fromString(configuration.referenceCommit));
+            walk.close();
+            logger.info("Reference commit is: " + refCommit.getId());
+            treeWalk.addTree(refCommit.getTree());
+        }
+        else {
+            treeWalk.addTree(resolveReference(base).getTree());
+        }
         treeWalk.setFilter(TreeFilter.ANY_DIFF);
         treeWalk.setRecursive(true);
         final Path workTree = git.getRepository().getWorkTree().toPath().normalize().toAbsolutePath();

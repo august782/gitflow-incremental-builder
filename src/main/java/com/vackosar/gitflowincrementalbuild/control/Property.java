@@ -4,6 +4,7 @@ public enum Property {
     enabled("true"),
     repositorySshKey(""),
     referenceBranch("refs/remotes/origin/develop"),
+    referenceCommit(""),
     baseBranch("HEAD"),
     uncommited("true"),
     skipTestsForNotImpactedModules("false"),
