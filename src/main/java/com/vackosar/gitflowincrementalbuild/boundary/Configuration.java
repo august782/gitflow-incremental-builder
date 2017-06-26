@@ -23,6 +23,7 @@ public class Configuration {
     public final String referenceBranch;
     public final String referenceCommit;
     public String baseBranch;
+    public String baseCommit;
     public final boolean uncommited;
     public final boolean makeUpstream;
     public final boolean skipTestsForNotImpactedModules;
@@ -40,6 +41,7 @@ public class Configuration {
             referenceBranch = Property.referenceBranch.getValue();
             referenceCommit = Property.referenceCommit.getValue();
             baseBranch = Property.baseBranch.getValue();
+            baseCommit = Property.baseCommit.getValue();
             uncommited = Boolean.valueOf(Property.uncommited.getValue());
             makeUpstream = alsoMakeBehaviours.contains(session.getRequest().getMakeBehavior());
             skipTestsForNotImpactedModules = Boolean.valueOf(Property.skipTestsForNotImpactedModules.getValue());
