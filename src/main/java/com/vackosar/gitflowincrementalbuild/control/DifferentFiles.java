@@ -68,7 +68,6 @@ public class DifferentFiles {
         treeWalk.close();
         git.getRepository().close();
         git.close();
-        System.out.println("AWSHI: " + paths);
         return paths;
     }
 
