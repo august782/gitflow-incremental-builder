@@ -34,7 +34,17 @@ public class DifferentFiles {
     public Set<Path> get() throws GitAPIException, IOException {
         fetch();
         checkout();
-        RevCommit base = getBranchCommit(configuration.baseBranch);
+        // Use a commit SHA to be base if it is set; otherwise do default branch base
+        RevCommit base;
+        if (!configuration.baseCommit.equals("")) {
+            RevWalk walk = new RevWalk(git.getRepository());
+            base = walk.parseCommit(ObjectId.fromString(configuration.baseCommit));
+            walk.close();
+            logger.info("Base commit is: " + base.getId());
+        }
+        else {
+            base = getBranchCommit(configuration.baseBranch);
+        }
         final TreeWalk treeWalk = new TreeWalk(git.getRepository());
         treeWalk.addTree(base.getTree());
         // Use a commit SHA to be reference if it is set; otherwise do default branch reference
@@ -58,6 +68,7 @@ public class DifferentFiles {
         treeWalk.close();
         git.getRepository().close();
         git.close();
+        System.out.println("AWSHI: " + paths);
         return paths;
     }
 

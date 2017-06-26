@@ -6,6 +6,7 @@ public enum Property {
     referenceBranch("refs/remotes/origin/develop"),
     referenceCommit(""),
     baseBranch("HEAD"),
+    baseCommit(""),
     uncommited("true"),
     skipTestsForNotImpactedModules("false"),
     buildAll("false"),
