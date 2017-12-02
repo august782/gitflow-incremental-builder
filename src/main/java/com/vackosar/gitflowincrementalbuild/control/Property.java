@@ -5,6 +5,7 @@ public enum Property {
     repositorySshKey(""),
     referenceBranch("refs/remotes/origin/develop"),
     referenceCommit(""),
+    commitRange(""),
     baseBranch("HEAD"),
     baseCommit(""),
     uncommited("true"),

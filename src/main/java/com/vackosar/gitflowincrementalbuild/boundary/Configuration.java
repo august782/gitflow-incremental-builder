@@ -24,6 +24,7 @@ public class Configuration {
     public final Optional<Path> key;
     public final String referenceBranch;
     public final String referenceCommit;
+    public final String commitRange;
     public String baseBranch;
     public String baseCommit;
     public final boolean uncommited;
@@ -44,6 +45,7 @@ public class Configuration {
             key = parseKey(session);
             referenceBranch = Property.referenceBranch.getValue();
             referenceCommit = Property.referenceCommit.getValue();
+            commitRange = Property.commitRange.getValue();
             baseBranch = Property.baseBranch.getValue();
             baseCommit = Property.baseCommit.getValue();
             uncommited = Boolean.valueOf(Property.uncommited.getValue());

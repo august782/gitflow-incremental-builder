@@ -33,11 +33,30 @@ public class DifferentFiles {
     public Set<Path> get() throws GitAPIException, IOException {
         fetch();
         checkout();
+
+        String baseCommit;
+        String referenceCommit;
+
+        // Based on commitRange being set or not, use different baseCommit and referenceCommit
+        if (configuration.commitRange.equals("")) {
+            baseCommit = configuration.baseCommit;
+            referenceCommit = configuration.referenceCommit;
+        }
+        else {
+            String[] parts = configuration.commitRange.split("\\.\\.\\.");
+            baseCommit = parts[1];
+            referenceCommit = parts[0];
+        }
+
+        return get(baseCommit, referenceCommit);
+    }
+
+    private Set<Path> get(String baseCommit, String referenceCommit) throws GitAPIException, IOException {
         // Use a commit SHA to be base if it is set; otherwise do default branch base
         RevCommit base;
-        if (!configuration.baseCommit.equals("")) {
+        if (!baseCommit.equals("")) {
             RevWalk walk = new RevWalk(git.getRepository());
-            base = walk.parseCommit(ObjectId.fromString(configuration.baseCommit));
+            base = walk.parseCommit(git.getRepository().resolve(baseCommit));
             walk.close();
             logger.info("Base commit is: " + base.getId());
         }
@@ -47,9 +66,9 @@ public class DifferentFiles {
         final TreeWalk treeWalk = new TreeWalk(git.getRepository());
         treeWalk.addTree(base.getTree());
         // Use a commit SHA to be reference if it is set; otherwise do default branch reference
-        if (!configuration.referenceCommit.equals("")) {
+        if (!referenceCommit.equals("")) {
             RevWalk walk = new RevWalk(git.getRepository());
-            RevCommit refCommit = walk.parseCommit(ObjectId.fromString(configuration.referenceCommit));
+            RevCommit refCommit = walk.parseCommit(git.getRepository().resolve(referenceCommit));
             walk.close();
             logger.info("Reference commit is: " + refCommit.getId());
             treeWalk.addTree(refCommit.getTree());
