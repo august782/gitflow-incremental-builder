@@ -16,7 +16,8 @@ public enum Property {
     fetchReferenceBranch("false"),
     excludePathRegex(Constants.NEVER_MATCH_REGEX),
     failOnMissingGitDir("true"),
-    failOnError("true")
+    failOnError("true"),
+    useEkstazi("false")
     ;
 
     public static final String PREFIX = "gib.";

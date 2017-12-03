@@ -36,6 +36,7 @@ public class Configuration {
     public final boolean fetchReferenceBranch;
     public final Predicate<String> excludePathRegex;
     public final boolean failOnMissingGitDir;
+    public final boolean useEkstazi;
 
     @Inject
     public Configuration(MavenSession session) throws IOException {
@@ -57,6 +58,7 @@ public class Configuration {
             fetchBaseBranch = Boolean.valueOf(Property.fetchBaseBranch.getValue());
             excludePathRegex = Pattern.compile(Property.excludePathRegex.getValue()).asPredicate();
             failOnMissingGitDir = Boolean.valueOf(Property.failOnMissingGitDir.getValue());
+            useEkstazi = Boolean.valueOf(Property.useEkstazi.getValue());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

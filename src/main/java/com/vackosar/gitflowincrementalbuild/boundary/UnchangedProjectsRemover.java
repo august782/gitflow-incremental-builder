@@ -3,7 +3,10 @@ package com.vackosar.gitflowincrementalbuild.boundary;
 import com.google.inject.Singleton;
 import com.vackosar.gitflowincrementalbuild.control.ChangedProjects;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -50,6 +53,33 @@ class UnchangedProjectsRemover {
                     .filter(p -> !impacted.contains(p))
                     .forEach(this::ifSkipDependenciesTest);
         }
+        // If useEkstazi option is true, add Ekstazi plugin to each MavenProject in the session
+        if (configuration.useEkstazi) {
+            // Only include Ekstazi if only Java changes
+            if (changedProjects.isJavaChangesOnly()) {
+                for (MavenProject proj : mavenSession.getProjects()) {
+                    Build build = proj.getBuild();
+                    addEkstaziPlugin(build);
+                    proj.setBuild(build);
+                }
+            }
+        }
+    }
+
+    private void addEkstaziPlugin(Build build) {
+        // Create the Ekstazi plugin
+        Plugin ekstazi = new Plugin();
+        ekstazi.setGroupId("org.ekstazi");
+        ekstazi.setArtifactId("ekstazi-maven-plugin");
+        ekstazi.setVersion("4.6.3");
+
+        // Add the execution to Ekstazi
+        PluginExecution execution = new PluginExecution();
+        execution.setId("ekstazi");
+        execution.addGoal("select");
+        ekstazi.addExecution(execution);
+
+        build.addPlugin(ekstazi);
     }
 
     private Set<MavenProject> getRebuildProjects(Set<MavenProject> changedProjects) {
