@@ -30,9 +30,7 @@ public class ChangedProjects {
 
     public boolean isJavaChangesOnly() throws GitAPIException, IOException {
         return differentFiles.get().stream()
-                .filter(path -> !path.toString().endsWith(".java"))
-                .collect(Collectors.toSet())
-                .isEmpty();
+                .allMatch(path -> path.toString().endsWith(".java"));
     }
 
     private MavenProject findProject(Path diffPath, MavenSession mavenSession) {
