@@ -28,6 +28,13 @@ public class ChangedProjects {
                 .collect(Collectors.toSet());
     }
 
+    public boolean isJavaChangesOnly() throws GitAPIException, IOException {
+        return differentFiles.get().stream()
+                .filter(path -> !path.toString().endsWith(".java"))
+                .collect(Collectors.toSet())
+                .isEmpty();
+    }
+
     private MavenProject findProject(Path diffPath, MavenSession mavenSession) {
         Map<Path, MavenProject> map = modules.createPathMap(mavenSession);
         Path path = diffPath;
