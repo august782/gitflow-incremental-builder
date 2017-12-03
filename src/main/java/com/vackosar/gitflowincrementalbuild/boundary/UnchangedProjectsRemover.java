@@ -9,15 +9,18 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 @Singleton
 class UnchangedProjectsRemover {
@@ -58,17 +61,11 @@ class UnchangedProjectsRemover {
         // If useEkstazi option is true, add Ekstazi plugin to each MavenProject in the session
         if (configuration.useEkstazi) {
             // Set the forceall property for Ekstazi if not all changes are Java
-            boolean forceall;
-            if (!changedProjects.isJavaChangesOnly()) {
-                forceall = true;
-            } else {
-                forceall = false;
-            }
+            boolean forceall = !changedProjects.isJavaChangesOnly();
             for (MavenProject proj : mavenSession.getProjects()) {
                 Build build = proj.getBuild();
                 addEkstaziPlugin(build, forceall);
                 proj.setBuild(build);
-
             }
         }
     }
@@ -128,8 +125,7 @@ class UnchangedProjectsRemover {
         return mavenProject.getBuildPlugins().stream()
                 .flatMap(p -> p.getExecutions().stream())
                 .flatMap(e -> e.getGoals().stream())
-                .filter(GOAL_TEST_JAR::equals).findAny()
-                .isPresent();
+                .anyMatch(GOAL_TEST_JAR::equals);
     }
 
     private void logProjects(Set<MavenProject> projects, String title) {
