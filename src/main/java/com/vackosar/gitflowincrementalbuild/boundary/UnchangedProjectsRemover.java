@@ -17,6 +17,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.codehaus.plexus.util.xml.Xpp3Dom;
+
 @Singleton
 class UnchangedProjectsRemover {
 
@@ -55,18 +57,23 @@ class UnchangedProjectsRemover {
         }
         // If useEkstazi option is true, add Ekstazi plugin to each MavenProject in the session
         if (configuration.useEkstazi) {
-            // Only include Ekstazi if only Java changes
-            if (changedProjects.isJavaChangesOnly()) {
-                for (MavenProject proj : mavenSession.getProjects()) {
-                    Build build = proj.getBuild();
-                    addEkstaziPlugin(build);
-                    proj.setBuild(build);
-                }
+            // Set the forceall property for Ekstazi if not all changes are Java
+            boolean forceall;
+            if (!changedProjects.isJavaChangesOnly()) {
+                forceall = true;
+            } else {
+                forceall = false;
+            }
+            for (MavenProject proj : mavenSession.getProjects()) {
+                Build build = proj.getBuild();
+                addEkstaziPlugin(build, forceall);
+                proj.setBuild(build);
+
             }
         }
     }
 
-    private void addEkstaziPlugin(Build build) {
+    private void addEkstaziPlugin(Build build, boolean forceall) {
         // Create the Ekstazi plugin
         Plugin ekstazi = new Plugin();
         ekstazi.setGroupId("org.ekstazi");
@@ -77,6 +84,14 @@ class UnchangedProjectsRemover {
         PluginExecution execution = new PluginExecution();
         execution.setId("ekstazi");
         execution.addGoal("select");
+        // Based on forceall, add new configuration for forceall property
+        if (forceall) {
+            Xpp3Dom configurationNode = new Xpp3Dom("configuration");
+            Xpp3Dom forceallNode = new Xpp3Dom("forceall");
+            forceallNode.setValue("true");
+            configurationNode.addChild(forceallNode);
+            execution.setConfiguration(configurationNode);
+        }
         ekstazi.addExecution(execution);
 
         build.addPlugin(ekstazi);
