@@ -5,18 +5,18 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.illinois</groupId>
     <artifactId>gitflow-incremental-builder</artifactId>
-    <version>3.5-SNAPSHOT</version>
+    <version>3.5.0</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>A maven extension for incremental building of multi-module projects when using Git Flow.</description>
-    <url>https://github.com/vackosar/gitflow-incremental-builder</url>
+    <url>https://github.com/august782/gitflow-incremental-builder</url>
     <issueManagement>
         <url>https://github.com/vackosar/gitflow-incremental-builder/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
     <scm>
-        <url>https://github.com/vackosar/gitflow-incremental-builder</url>
-        <connection>scm:git://github.com/vackosar/gitflow-incremental-builder.git</connection>
-        <developerConnection>scm:git:git@github.com:vackosar/gitflow-incremental-builder.git</developerConnection>
+        <url>https://github.com/august782/gitflow-incremental-builder</url>
+        <connection>scm:git://github.com/august782/gitflow-incremental-builder.git</connection>
+        <developerConnection>scm:git:git@github.com:august782/gitflow-incremental-builder.git</developerConnection>
     </scm>
     <licenses>
         <license>
@@ -30,6 +30,16 @@
             <name>Vaclav Kosar</name>
             <url>https://github.com/vackosar</url>
             <id>vackosar</id>
+        </developer>
+        <developer>
+            <name>August Shi</name>
+            <url>https://github.com/august782</url>
+            <id>august782</id>
+        </developer>
+        <developer>
+            <name>Peiyuan Zhao</name>
+            <url>https://github.com/DrRacket</url>
+            <id>DrRacket</id>
         </developer>
     </developers>
     <properties>
