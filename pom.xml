@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.illinois</groupId>
-    <artifactId>gitflow-incremental-builder</artifactId>
+    <artifactId>incremental-builder-with-ekstazi</artifactId>
     <version>3.5.0</version>
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>A maven extension for incremental building of multi-module projects when using Git Flow.</description>
+    <description>A maven extension for incremental building of multi-module projects and using Ekstazi for test selection.</description>
     <url>https://github.com/august782/gitflow-incremental-builder</url>
     <issueManagement>
         <url>https://github.com/vackosar/gitflow-incremental-builder/issues</url>
