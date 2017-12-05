@@ -203,6 +203,10 @@ public class DifferentFilesTest extends BaseRepoTest {
             return new Configuration(mavenSession);
         }
 
+        @Singleton @Provides public MavenSession provideMavenSession() throws Exception {
+            return guiceModule.provideMavenSession();
+        }
+
         @Override
         protected void configure() {}
 
