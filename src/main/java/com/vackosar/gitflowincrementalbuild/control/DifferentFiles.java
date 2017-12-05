@@ -1,6 +1,7 @@
 package com.vackosar.gitflowincrementalbuild.control;
 
 import com.vackosar.gitflowincrementalbuild.boundary.Configuration;
+import org.apache.maven.execution.MavenSession;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -29,6 +30,7 @@ public class DifferentFiles {
     @Inject private Git git;
     @Inject private Configuration configuration;
     @Inject private Logger logger;
+    @Inject private MavenSession mavenSession;
 
     public Set<Path> get() throws GitAPIException, IOException {
         fetch();
@@ -37,15 +39,24 @@ public class DifferentFiles {
         String baseCommit;
         String referenceCommit;
 
-        // Based on commitRange being set or not, use different baseCommit and referenceCommit
-        if (configuration.commitRange.equals("")) {
+        // Based on commitRange being set as DEFAULT or not, use different baseCommit and referenceCommit
+        if (configuration.commitRange.equals("DEFAULT")) {
             baseCommit = configuration.baseCommit;
             referenceCommit = configuration.referenceCommit;
         }
         else {
-            String[] parts = configuration.commitRange.split("\\.\\.\\.");
-            baseCommit = parts[1];
-            referenceCommit = parts[0];
+            // If the value is empty, that means no comparison (from Travis), suggesting first build
+            // As such, simulate building everything by returning that the root path changed
+            if (configuration.commitRange.equals("")) {
+                Set<Path> rootPaths = new HashSet<Path>();
+                rootPaths.add(mavenSession.getTopLevelProject().getBasedir().toPath());
+                return rootPaths;
+            }
+            else {
+                String[] parts = configuration.commitRange.split("\\.\\.\\.");
+                baseCommit = parts[1];
+                referenceCommit = parts[0];
+            }
         }
 
         return get(baseCommit, referenceCommit);
