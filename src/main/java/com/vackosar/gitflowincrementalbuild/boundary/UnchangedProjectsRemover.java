@@ -51,7 +51,15 @@ class UnchangedProjectsRemover {
                 mavenSession.getGoals().clear();
                 mavenSession.getGoals().add("validate");
             } else {
-                mavenSession.setProjects(new ArrayList<>(rebuild));
+                // Create list of projects to rebuild while maintaining same order
+                // as default list from session
+                List<MavenProject> rebuildList = new ArrayList<>();
+                for (MavenProject proj : mavenSession.getProjects()) {
+                    if (rebuild.contains(proj)) {
+                        rebuildList.add(proj);
+                    }
+                }
+                mavenSession.setProjects(rebuildList);
             }
         } else {
             mavenSession.getProjects().stream()
