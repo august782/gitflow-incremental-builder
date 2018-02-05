@@ -21,8 +21,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -96,10 +98,13 @@ class UnchangedProjectsRemover {
         }
 
         // Try to read the stored classpathFile; if cannot, then assume new one
-        String oldClasspath = "";
+        StringBuilder oldClasspathSB = new StringBuilder();
         try {
             BufferedReader br = new BufferedReader(new FileReader(configuration.classpathFile));
-            oldClasspath = br.readLine();   // Classpath is only in one line
+            String line;
+            while ((line = br.readLine()) != null) {
+                oldClasspathSB.append(line);
+            }
 
             br.close();
         } catch (FileNotFoundException ex) {
@@ -108,27 +113,38 @@ class UnchangedProjectsRemover {
             // An IOException occurs if file is empty, so can safely continue (will write the new classpath in)
             logger.info("The file set for classpathFile is empty, will overwrite it.");
         }
+        String oldClasspath = oldClasspathSB.toString();
 
-        // For each MavenProject, collect their dependencies
-        Set<Dependency> dependencies = new HashSet<Dependency>();
+        // For each MavenProject, map to each one's dependencies
+        Map<String, Set<Dependency>> proj2Deps = new HashMap<String, Set<Dependency>>();
         for (MavenProject proj : mavenSession.getProjects()) {
+            String projId = proj.getGroupId() + ":" + proj.getArtifactId(); // Do not serialize the version, that changes often
+            Set<Dependency> dependencies = new HashSet<Dependency>();
             dependencies.addAll(proj.getDependencies());
+            proj2Deps.put(projId, dependencies);
         }
 
-        // Collect dependency names, sort them, serialize as String
-        List<String> depNames = new ArrayList<String>();
-        for (Dependency dep : dependencies) {
-            depNames.add(dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion());
-        }
-        Collections.sort(depNames);
-        StringBuilder sb = new StringBuilder();
-        for (String dep : depNames) {
-            sb.append(dep);
-            sb.append(",");
+        // Sort and serialize the mapping
+        StringBuilder newClasspathSB = new StringBuilder();
+        List<String> projIds = new ArrayList<String>(proj2Deps.keySet());
+        Collections.sort(projIds);
+        for (String projId : projIds) {
+            newClasspathSB.append(projId);
+            newClasspathSB.append("=");
+            List<String> depNames = new ArrayList<String>();
+            for (Dependency dep : proj2Deps.get(projId)) {
+                depNames.add(dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion());
+            }
+            Collections.sort(depNames);
+            for (String dep : depNames) {
+                newClasspathSB.append(dep);
+                newClasspathSB.append(",");
+            }
+            newClasspathSB.append("\n");
         }
 
         // Compare the serialized dependencies with that on disk
-        String newClasspath = sb.toString();
+        String newClasspath = newClasspathSB.toString();
         if (newClasspath.equals(oldClasspath)) {
             // If same, can safely ignore pom.xml if changed
             configuration.excludePathRegex = configuration.excludePathRegex.or(Pattern.compile("(pom.xml$)").asPredicate());
