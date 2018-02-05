@@ -17,7 +17,8 @@ public enum Property {
     excludePathRegex(Constants.NEVER_MATCH_REGEX),
     failOnMissingGitDir("true"),
     failOnError("true"),
-    useEkstazi("false")
+    useEkstazi("false"),
+    classpathFile("")
     ;
 
     public static final String PREFIX = "gib.";

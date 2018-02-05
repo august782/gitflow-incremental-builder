@@ -34,9 +34,10 @@ public class Configuration {
     public final boolean compareToMergeBase;
     public final boolean fetchBaseBranch;
     public final boolean fetchReferenceBranch;
-    public final Predicate<String> excludePathRegex;
+    public Predicate<String> excludePathRegex;
     public final boolean failOnMissingGitDir;
     public final boolean useEkstazi;
+    public final String classpathFile;
 
     @Inject
     public Configuration(MavenSession session) throws IOException {
@@ -59,6 +60,7 @@ public class Configuration {
             excludePathRegex = Pattern.compile(Property.excludePathRegex.getValue()).asPredicate();
             failOnMissingGitDir = Boolean.valueOf(Property.failOnMissingGitDir.getValue());
             useEkstazi = Boolean.valueOf(Property.useEkstazi.getValue());
+            classpathFile = Property.classpathFile.getValue();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
