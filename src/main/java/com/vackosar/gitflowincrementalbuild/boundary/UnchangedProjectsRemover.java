@@ -118,8 +118,10 @@ class UnchangedProjectsRemover {
 
         // For each MavenProject, map to each one's dependencies
         Map<String, Set<Dependency>> proj2Deps = new HashMap<String, Set<Dependency>>();
+        Set<String> internalDeps = new HashSet<String>();
         for (MavenProject proj : mavenSession.getProjects()) {
             String projId = proj.getGroupId() + ":" + proj.getArtifactId(); // Do not serialize the version, that changes often
+            internalDeps.add(projId + ":" + proj.getVersion());             // However, do keep version in set of internal deps for later comparison
             Set<Dependency> dependencies = new HashSet<Dependency>();
             dependencies.addAll(proj.getDependencies());
             proj2Deps.put(projId, dependencies);
@@ -134,7 +136,14 @@ class UnchangedProjectsRemover {
             newClasspathSB.append("=");
             List<String> depNames = new ArrayList<String>();
             for (Dependency dep : proj2Deps.get(projId)) {
-                depNames.add(dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion());
+                String depName = dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion();
+                // If the dependency is an internal one, do not store the version, since that can change often
+                if (!internalDeps.contains(depName)) {
+                    depNames.add(depName);
+                }
+                else {
+                    depNames.add(dep.getGroupId() + ":" + dep.getArtifactId());
+                }
             }
             Collections.sort(depNames);
             for (String dep : depNames) {
