@@ -13,12 +13,22 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,6 +47,9 @@ class UnchangedProjectsRemover {
     @Inject private MavenSession mavenSession;
 
     void act() throws GitAPIException, IOException {
+        // Update the filter based on any dependencies changed, and update the dependencies
+        checkAndUpdateDependencies();
+
         Set<MavenProject> changed = changedProjects.get();
         printDelimiter();
         logProjects(changed, "Changed Artifacts:");
@@ -78,12 +91,83 @@ class UnchangedProjectsRemover {
         }
     }
 
+    private void checkAndUpdateDependencies() {
+        // If the classpathFile is not set, then don't bother
+        if (configuration.classpathFile.equals("")) {
+            return;
+        }
+
+        // Try to read the stored classpathFile; if cannot, then assume new one
+        StringBuilder oldClasspathSB = new StringBuilder();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(configuration.classpathFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                oldClasspathSB.append(line);
+            }
+
+            br.close();
+        } catch (FileNotFoundException ex) {
+            logger.info("The file set for classpathFile is not found, will make new file in its place.");
+        } catch (IOException ex) {
+            // An IOException occurs if file is empty, so can safely continue (will write the new classpath in)
+            logger.info("The file set for classpathFile is empty, will overwrite it.");
+        }
+        String oldClasspath = oldClasspathSB.toString();
+
+        // For each MavenProject, map to each one's dependencies
+        Map<String, Set<Dependency>> proj2Deps = new HashMap<String, Set<Dependency>>();
+        for (MavenProject proj : mavenSession.getProjects()) {
+            String projId = proj.getGroupId() + ":" + proj.getArtifactId(); // Do not serialize the version, that changes often
+            Set<Dependency> dependencies = new HashSet<Dependency>();
+            dependencies.addAll(proj.getDependencies());
+            proj2Deps.put(projId, dependencies);
+        }
+
+        // Sort and serialize the mapping
+        StringBuilder newClasspathSB = new StringBuilder();
+        List<String> projIds = new ArrayList<String>(proj2Deps.keySet());
+        Collections.sort(projIds);
+        for (String projId : projIds) {
+            newClasspathSB.append(projId);
+            newClasspathSB.append("=");
+            List<String> depNames = new ArrayList<String>();
+            for (Dependency dep : proj2Deps.get(projId)) {
+                depNames.add(dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion());
+            }
+            Collections.sort(depNames);
+            for (String dep : depNames) {
+                newClasspathSB.append(dep);
+                newClasspathSB.append(",");
+            }
+            newClasspathSB.append("\n");
+        }
+
+        // Compare the serialized dependencies with that on disk
+        String newClasspath = newClasspathSB.toString();
+        if (newClasspath.equals(oldClasspath)) {
+            // If same, can safely ignore pom.xml if changed
+            configuration.excludePathRegex = configuration.excludePathRegex.or(Pattern.compile("(pom.xml$)").asPredicate());
+        }
+
+        // Write the classpath into the file
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(configuration.classpathFile));
+            bw.write(newClasspath);
+            bw.newLine();
+
+            bw.close();
+        } catch (IOException ex) {
+            logger.info("Exception when writing to the file.");
+        }
+    }
+
     private void addEkstaziPlugin(Build build, boolean forceall) {
         // Create the Ekstazi plugin
         Plugin ekstazi = new Plugin();
         ekstazi.setGroupId("org.ekstazi");
         ekstazi.setArtifactId("ekstazi-maven-plugin");
-        ekstazi.setVersion("4.6.3");
+        ekstazi.setVersion("5.0.1");
 
         // Add the execution to Ekstazi
         PluginExecution execution = new PluginExecution();
