@@ -104,6 +104,7 @@ class UnchangedProjectsRemover {
             String line;
             while ((line = br.readLine()) != null) {
                 oldClasspathSB.append(line);
+                oldClasspathSB.append("\n");
             }
 
             br.close();
@@ -145,7 +146,7 @@ class UnchangedProjectsRemover {
 
         // Compare the serialized dependencies with that on disk
         String newClasspath = newClasspathSB.toString();
-        if (newClasspath.equals(oldClasspath)) {
+        if (newClasspath.trim().equals(oldClasspath.trim())) {
             // If same, can safely ignore pom.xml if changed
             configuration.excludePathRegex = configuration.excludePathRegex.or(Pattern.compile("(pom.xml$)").asPredicate());
         }
