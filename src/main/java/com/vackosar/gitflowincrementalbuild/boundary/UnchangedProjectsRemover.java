@@ -177,7 +177,7 @@ class UnchangedProjectsRemover {
         Plugin ekstazi = new Plugin();
         ekstazi.setGroupId("org.ekstazi");
         ekstazi.setArtifactId("ekstazi-maven-plugin");
-        ekstazi.setVersion("5.0.1");
+        ekstazi.setVersion("4.6.3");
 
         // Add the execution to Ekstazi
         PluginExecution execution = new PluginExecution();
