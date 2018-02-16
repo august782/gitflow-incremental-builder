@@ -83,6 +83,9 @@ class UnchangedProjectsRemover {
         if (configuration.useEkstazi) {
             // Set the forceall property for Ekstazi if not all changes are Java
             boolean forceall = !changedProjects.isJavaChangesOnly();
+            if (forceall) {
+                logger.info("EKSTAZI TURNED OFF, NOT ALL JAVA CHANGES");
+            }
             for (MavenProject proj : mavenSession.getProjects()) {
                 Build build = proj.getBuild();
                 addEkstaziPlugin(build, forceall);
@@ -158,6 +161,7 @@ class UnchangedProjectsRemover {
         if (newClasspath.trim().equals(oldClasspath.trim())) {
             // If same, can safely ignore pom.xml if changed
             configuration.excludePathRegex = configuration.excludePathRegex.or(Pattern.compile("(pom.xml$)").asPredicate());
+            logger.info("EXCLUDING pom.xml, DEPENDENCIES DID NOT CHANGE");
         }
 
         // Write the classpath into the file
