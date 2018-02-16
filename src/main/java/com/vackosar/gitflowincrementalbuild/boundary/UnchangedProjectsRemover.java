@@ -53,9 +53,9 @@ class UnchangedProjectsRemover {
         Set<MavenProject> changed = changedProjects.get();
         printDelimiter();
         logProjects(changed, "Changed Artifacts:");
-        Set<MavenProject> impacted = mavenSession.getProjects().stream()
+        Set<MavenProject> impacted = mavenSession.getAllProjects().stream()
                 .filter(changed::contains)
-                .flatMap(p -> getAllDependents(mavenSession.getProjects(), p).stream())
+                .flatMap(p -> getAllDependents(mavenSession.getAllProjects(), p).stream())
                 .collect(Collectors.toSet());
         if (!configuration.buildAll) {
             Set<MavenProject> rebuild = getRebuildProjects(impacted);
@@ -119,7 +119,7 @@ class UnchangedProjectsRemover {
         // For each MavenProject, map to each one's dependencies
         Map<String, Set<Dependency>> proj2Deps = new HashMap<String, Set<Dependency>>();
         Set<String> internalDeps = new HashSet<String>();
-        for (MavenProject proj : mavenSession.getProjects()) {
+        for (MavenProject proj : mavenSession.getAllProjects()) {
             String projId = proj.getGroupId() + ":" + proj.getArtifactId(); // Do not serialize the version, that changes often
             internalDeps.add(projId + ":" + proj.getVersion());             // However, do keep version in set of internal deps for later comparison
             Set<Dependency> dependencies = new HashSet<Dependency>();

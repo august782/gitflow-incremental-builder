@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class Modules {
 
     public Map<Path, MavenProject> createPathMap(MavenSession session) {
-        return session.getProjects().stream()
+        return session.getAllProjects().stream()
                 .collect(Collectors.toMap(Modules::getPath, project -> project));
     }
 
