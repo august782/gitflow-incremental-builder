@@ -53,9 +53,9 @@ class UnchangedProjectsRemover {
         Set<MavenProject> changed = changedProjects.get();
         printDelimiter();
         logProjects(changed, "Changed Artifacts:");
-        Set<MavenProject> impacted = mavenSession.getProjects().stream()
+        Set<MavenProject> impacted = mavenSession.getAllProjects().stream()
                 .filter(changed::contains)
-                .flatMap(p -> getAllDependents(mavenSession.getProjects(), p).stream())
+                .flatMap(p -> getAllDependents(mavenSession.getAllProjects(), p).stream())
                 .collect(Collectors.toSet());
         if (!configuration.buildAll) {
             Set<MavenProject> rebuild = getRebuildProjects(impacted);
@@ -83,6 +83,9 @@ class UnchangedProjectsRemover {
         if (configuration.useEkstazi) {
             // Set the forceall property for Ekstazi if not all changes are Java
             boolean forceall = !changedProjects.isJavaChangesOnly();
+            if (forceall) {
+                logger.info("EKSTAZI TURNED OFF, NOT ALL JAVA CHANGES");
+            }
             for (MavenProject proj : mavenSession.getProjects()) {
                 Build build = proj.getBuild();
                 addEkstaziPlugin(build, forceall);
@@ -119,7 +122,7 @@ class UnchangedProjectsRemover {
         // For each MavenProject, map to each one's dependencies
         Map<String, Set<Dependency>> proj2Deps = new HashMap<String, Set<Dependency>>();
         Set<String> internalDeps = new HashSet<String>();
-        for (MavenProject proj : mavenSession.getProjects()) {
+        for (MavenProject proj : mavenSession.getAllProjects()) {
             String projId = proj.getGroupId() + ":" + proj.getArtifactId(); // Do not serialize the version, that changes often
             internalDeps.add(projId + ":" + proj.getVersion());             // However, do keep version in set of internal deps for later comparison
             Set<Dependency> dependencies = new HashSet<Dependency>();
@@ -158,6 +161,7 @@ class UnchangedProjectsRemover {
         if (newClasspath.trim().equals(oldClasspath.trim())) {
             // If same, can safely ignore pom.xml if changed
             configuration.excludePathRegex = configuration.excludePathRegex.or(Pattern.compile("(pom.xml$)").asPredicate());
+            logger.info("EXCLUDING pom.xml, DEPENDENCIES DID NOT CHANGE");
         }
 
         // Write the classpath into the file
@@ -177,7 +181,7 @@ class UnchangedProjectsRemover {
         Plugin ekstazi = new Plugin();
         ekstazi.setGroupId("org.ekstazi");
         ekstazi.setArtifactId("ekstazi-maven-plugin");
-        ekstazi.setVersion("5.0.1");
+        ekstazi.setVersion("4.6.3");
 
         // Add the execution to Ekstazi
         PluginExecution execution = new PluginExecution();
