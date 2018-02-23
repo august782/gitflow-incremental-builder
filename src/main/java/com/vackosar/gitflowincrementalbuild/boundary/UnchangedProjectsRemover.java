@@ -72,7 +72,16 @@ class UnchangedProjectsRemover {
                         rebuildList.add(proj);
                     }
                 }
-                mavenSession.setProjects(rebuildList);
+                // Potentially can lead to empty projects due to manually setting -pl in build command,
+                // so need to have same logic as if rebuild was empty
+                if (rebuildList.isEmpty()) {
+                    logger.info("No artifacts affected to rebuild. Executing validate goal only.");
+                    mavenSession.getGoals().clear();
+                    mavenSession.getGoals().add("validate");
+                }
+                else {
+                    mavenSession.setProjects(rebuildList);
+                }
             }
         } else {
             mavenSession.getProjects().stream()
