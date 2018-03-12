@@ -51,7 +51,7 @@ public class Configuration {
             baseBranch = Property.baseBranch.getValue();
             baseCommit = Property.baseCommit.getValue();
             uncommited = Boolean.valueOf(Property.uncommited.getValue());
-            makeUpstream = alsoMakeBehaviours.contains(session.getRequest().getMakeBehavior());
+            makeUpstream = alsoMakeBehaviours.contains(session.getRequest().getMakeBehavior()) | Boolean.valueOf(Property.makeUpstream.getValue());
             skipTestsForNotImpactedModules = Boolean.valueOf(Property.skipTestsForNotImpactedModules.getValue());
             buildAll = Boolean.valueOf(Property.buildAll.getValue());
             compareToMergeBase = Boolean.valueOf(Property.compareToMergeBase.getValue());

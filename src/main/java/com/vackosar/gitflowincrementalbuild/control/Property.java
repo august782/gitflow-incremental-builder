@@ -9,6 +9,7 @@ public enum Property {
     baseBranch("HEAD"),
     baseCommit(""),
     uncommited("true"),
+    makeUpstream("false"),
     skipTestsForNotImpactedModules("false"),
     buildAll("false"),
     compareToMergeBase("true"),
