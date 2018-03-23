@@ -60,9 +60,7 @@ class UnchangedProjectsRemover {
         if (!configuration.buildAll) {
             Set<MavenProject> rebuild = getRebuildProjects(impacted);
             if (rebuild.isEmpty()) {
-                logger.info("No changed artifacts to build. Executing validate goal only.");
-                mavenSession.getGoals().clear();
-                mavenSession.getGoals().add("validate");
+                validateCurrentProject();
             } else {
                 // Create list of projects to rebuild while maintaining same order
                 // as default list from session
@@ -75,9 +73,7 @@ class UnchangedProjectsRemover {
                 // Potentially can lead to empty projects due to manually setting -pl in build command,
                 // so need to have same logic as if rebuild was empty
                 if (rebuildList.isEmpty()) {
-                    logger.info("No artifacts affected to rebuild. Executing validate goal only.");
-                    mavenSession.getGoals().clear();
-                    mavenSession.getGoals().add("validate");
+                    validateCurrentProject();
                 }
                 else {
                     mavenSession.setProjects(rebuildList);
@@ -101,6 +97,13 @@ class UnchangedProjectsRemover {
                 proj.setBuild(build);
             }
         }
+    }
+
+    private void validateCurrentProject() {
+        logger.info("No changed artifacts to build. Executing validate goal on current project only.");
+        mavenSession.setProjects(Collections.singletonList(mavenSession.getCurrentProject()));
+        mavenSession.getGoals().clear();
+        mavenSession.getGoals().add("validate");
     }
 
     private void checkAndUpdateDependencies() {
