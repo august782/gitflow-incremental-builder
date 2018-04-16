@@ -18,8 +18,8 @@ public enum Property {
     failOnMissingGitDir("true"),
     failOnError("true"),
     useEkstazi("false"),
-    classpathFile("")
-    ;
+    classpathFile(""),
+    skippedModulesFile("");
 
     public static final String PREFIX = "gib.";
 
@@ -30,7 +30,7 @@ public enum Property {
     }
 
     private String exemplify() {
-        return "<" + fullName() + ">" + ( defaultValue == null ? "" : defaultValue )+ "</" + fullName() + ">";
+        return "<" + fullName() + ">" + (defaultValue == null ? "" : defaultValue) + "</" + fullName() + ">";
     }
 
     public String fullName() {
@@ -42,7 +42,7 @@ public enum Property {
     }
 
     public void setValue(String value) {
-        if (value ==null) {
+        if (value == null) {
             System.clearProperty(fullName());
         } else {
             System.setProperty(fullName(), value);
@@ -52,7 +52,7 @@ public enum Property {
     public static String exemplifyAll() {
         StringBuilder builder = new StringBuilder();
         builder.append("<properties>\n");
-        for (Property value :Property.values()) {
+        for (Property value : Property.values()) {
             builder.append("\t").append(value.exemplify()).append("\n");
         }
         builder.append("</properties>\n");

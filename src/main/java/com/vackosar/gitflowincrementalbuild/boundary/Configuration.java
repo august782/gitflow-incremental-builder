@@ -38,6 +38,7 @@ public class Configuration {
     public final boolean failOnMissingGitDir;
     public final boolean useEkstazi;
     public final String classpathFile;
+    public final String skippedModulesFile;
 
     @Inject
     public Configuration(MavenSession session) throws IOException {
@@ -61,6 +62,7 @@ public class Configuration {
             failOnMissingGitDir = Boolean.valueOf(Property.failOnMissingGitDir.getValue());
             useEkstazi = Boolean.valueOf(Property.useEkstazi.getValue());
             classpathFile = Property.classpathFile.getValue();
+            skippedModulesFile = Property.skippedModulesFile.getValue();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

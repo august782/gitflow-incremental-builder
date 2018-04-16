@@ -18,6 +18,7 @@ import java.io.IOException;
 public class MavenLifecycleParticipant extends AbstractMavenLifecycleParticipant {
 
     @Requirement private Logger logger;
+    private UnchangedProjectsRemover worker;
 
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
@@ -25,7 +26,10 @@ public class MavenLifecycleParticipant extends AbstractMavenLifecycleParticipant
             mergeCurrentProjectProperties(session);
             if (Boolean.valueOf(Property.enabled.getValue())) {
                 logger.info("gitflow-incremental-builder starting..."); //TODO Print version.
-                execute(session);
+                worker = Guice
+                        .createInjector(new GuiceModule(logger, session))
+                        .getInstance(UnchangedProjectsRemover.class);
+                worker.act();
                 logger.info("gitflow-incremental-builder exiting...");
             } else {
                 logger.info("gitflow-incremental-builder is disabled.");
@@ -41,11 +45,13 @@ public class MavenLifecycleParticipant extends AbstractMavenLifecycleParticipant
         }
     }
 
-    private void execute(MavenSession session) throws GitAPIException, IOException {
-        Guice
-                .createInjector(new GuiceModule(logger, session))
-                .getInstance(UnchangedProjectsRemover.class)
-                .act();
+    @Override
+    public void	afterSessionEnd(MavenSession session) throws MavenExecutionException {
+        try {
+            worker.checkSkippedModules();
+        } catch (Exception e) {
+            throw new MavenExecutionException("Exception during gitflow-incremental-builder execution occurred.", e);
+        }
     }
 
     private void mergeCurrentProjectProperties(MavenSession mavenSession) {
@@ -54,5 +60,4 @@ public class MavenLifecycleParticipant extends AbstractMavenLifecycleParticipant
                 .filter(e->System.getProperty(e.getKey().toString()) == null)
                 .forEach(e->System.setProperty(e.getKey().toString(), e.getValue().toString()));
     }
-
 }

@@ -2,6 +2,8 @@ package com.vackosar.gitflowincrementalbuild.boundary;
 
 import com.google.inject.Singleton;
 import com.vackosar.gitflowincrementalbuild.control.ChangedProjects;
+import org.apache.maven.execution.BuildSummary;
+import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Dependency;
@@ -49,7 +51,7 @@ class UnchangedProjectsRemover {
     void act() throws GitAPIException, IOException {
         // Update the filter based on any dependencies changed, and update the dependencies
         checkAndUpdateDependencies();
-
+        Set<String> skippedModules = getSkippedModules();
         Set<MavenProject> changed = changedProjects.get();
         printDelimiter();
         logProjects(changed, "Changed Artifacts:");
@@ -60,26 +62,21 @@ class UnchangedProjectsRemover {
         if (!configuration.buildAll) {
             Set<MavenProject> rebuild = getRebuildProjects(impacted);
             if (rebuild.isEmpty()) {
-                logger.info("No changed artifacts to build. Executing validate goal only.");
-                mavenSession.getGoals().clear();
-                mavenSession.getGoals().add("validate");
+                validateCurrentProject();
             } else {
                 // Create list of projects to rebuild while maintaining same order
                 // as default list from session
                 List<MavenProject> rebuildList = new ArrayList<>();
                 for (MavenProject proj : mavenSession.getProjects()) {
-                    if (rebuild.contains(proj)) {
+                    if (rebuild.contains(proj) || (!skippedModules.isEmpty() && skippedModules.contains(proj.toString()))) {
                         rebuildList.add(proj);
                     }
                 }
                 // Potentially can lead to empty projects due to manually setting -pl in build command,
                 // so need to have same logic as if rebuild was empty
                 if (rebuildList.isEmpty()) {
-                    logger.info("No artifacts affected to rebuild. Executing validate goal only.");
-                    mavenSession.getGoals().clear();
-                    mavenSession.getGoals().add("validate");
-                }
-                else {
+                    validateCurrentProject();
+                } else {
                     mavenSession.setProjects(rebuildList);
                 }
             }
@@ -101,6 +98,55 @@ class UnchangedProjectsRemover {
                 proj.setBuild(build);
             }
         }
+    }
+
+    private Set<String> getSkippedModules() {
+        Set<String> result = new HashSet<>();
+        if (configuration.skippedModulesFile.equals("")) {
+            return result;
+        }
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(configuration.skippedModulesFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                result.add(line);
+            }
+            br.close();
+        } catch (FileNotFoundException ex) {
+            logger.info("The file set for skippedModulesFile is not found.");
+        } catch (IOException ex) {
+            logger.info("The file set for skippedModulesFile is empty.");
+        }
+        return result;
+    }
+
+    void checkSkippedModules() {
+        if (configuration.skippedModulesFile.equals("")) {
+            return;
+        }
+        StringBuilder skippedModulesSB = new StringBuilder();
+        MavenExecutionResult result = mavenSession.getResult();
+        for (MavenProject project : mavenSession.getProjects()) {
+            if (result.getBuildSummary(project) == null) {
+                skippedModulesSB.append(project.toString());
+                skippedModulesSB.append("\n");
+            }
+        }
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(configuration.skippedModulesFile));
+            bw.write(skippedModulesSB.toString());
+            bw.newLine();
+            bw.close();
+        } catch (IOException ex) {
+            logger.info("Exception when writing to the file.");
+        }
+    }
+
+    private void validateCurrentProject() {
+        logger.info("No changed artifacts to build. Executing validate goal on current project only.");
+        mavenSession.setProjects(Collections.singletonList(mavenSession.getCurrentProject()));
+        mavenSession.getGoals().clear();
+        mavenSession.getGoals().add("validate");
     }
 
     private void checkAndUpdateDependencies() {
@@ -129,24 +175,24 @@ class UnchangedProjectsRemover {
         String oldClasspath = oldClasspathSB.toString();
 
         // For each MavenProject, map to each one's dependencies
-        Map<String, Set<Dependency>> proj2Deps = new HashMap<String, Set<Dependency>>();
-        Set<String> internalDeps = new HashSet<String>();
+        Map<String, Set<Dependency>> proj2Deps = new HashMap<>();
+        Set<String> internalDeps = new HashSet<>();
         for (MavenProject proj : mavenSession.getAllProjects()) {
             String projId = proj.getGroupId() + ":" + proj.getArtifactId(); // Do not serialize the version, that changes often
             internalDeps.add(projId + ":" + proj.getVersion());             // However, do keep version in set of internal deps for later comparison
-            Set<Dependency> dependencies = new HashSet<Dependency>();
+            Set<Dependency> dependencies = new HashSet<>();
             dependencies.addAll(proj.getDependencies());
             proj2Deps.put(projId, dependencies);
         }
 
         // Sort and serialize the mapping
         StringBuilder newClasspathSB = new StringBuilder();
-        List<String> projIds = new ArrayList<String>(proj2Deps.keySet());
+        List<String> projIds = new ArrayList<>(proj2Deps.keySet());
         Collections.sort(projIds);
         for (String projId : projIds) {
             newClasspathSB.append(projId);
             newClasspathSB.append("=");
-            List<String> depNames = new ArrayList<String>();
+            List<String> depNames = new ArrayList<>();
             for (Dependency dep : proj2Deps.get(projId)) {
                 String depName = dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion();
                 // If the dependency is an internal one, do not store the version, since that can change often
@@ -190,7 +236,7 @@ class UnchangedProjectsRemover {
         Plugin ekstazi = new Plugin();
         ekstazi.setGroupId("org.ekstazi");
         ekstazi.setArtifactId("ekstazi-maven-plugin");
-        ekstazi.setVersion("4.6.3");
+        ekstazi.setVersion("5.2.0");
 
         // Add the execution to Ekstazi
         PluginExecution execution = new PluginExecution();
