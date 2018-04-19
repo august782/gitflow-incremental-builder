@@ -46,7 +46,7 @@ public class MavenLifecycleParticipant extends AbstractMavenLifecycleParticipant
     }
 
     @Override
-    public void	afterSessionEnd(MavenSession session) throws MavenExecutionException {
+    public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
         try {
             worker.checkSkippedModules();
         } catch (Exception e) {

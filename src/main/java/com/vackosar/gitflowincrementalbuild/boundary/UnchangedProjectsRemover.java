@@ -2,7 +2,6 @@ package com.vackosar.gitflowincrementalbuild.boundary;
 
 import com.google.inject.Singleton;
 import com.vackosar.gitflowincrementalbuild.control.ChangedProjects;
-import org.apache.maven.execution.BuildSummary;
 import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,8 +49,7 @@ class UnchangedProjectsRemover {
     void act() throws GitAPIException, IOException {
         // Update the filter based on any dependencies changed, and update the dependencies
         checkAndUpdateDependencies();
-        Set<String> skippedModules = getSkippedModules();
-        Set<MavenProject> changed = changedProjects.get();
+        Set<MavenProject> changed = getChangedModules();
         printDelimiter();
         logProjects(changed, "Changed Artifacts:");
         Set<MavenProject> impacted = mavenSession.getAllProjects().stream()
@@ -68,7 +65,7 @@ class UnchangedProjectsRemover {
                 // as default list from session
                 List<MavenProject> rebuildList = new ArrayList<>();
                 for (MavenProject proj : mavenSession.getProjects()) {
-                    if (rebuild.contains(proj) || (!skippedModules.isEmpty() && skippedModules.contains(proj.toString()))) {
+                    if (rebuild.contains(proj)) {
                         rebuildList.add(proj);
                     }
                 }
@@ -100,22 +97,28 @@ class UnchangedProjectsRemover {
         }
     }
 
-    private Set<String> getSkippedModules() {
-        Set<String> result = new HashSet<>();
+    private Set<MavenProject> getChangedModules() throws GitAPIException, IOException {
+        Set<MavenProject> result = changedProjects.get();
         if (configuration.skippedModulesFile.equals("")) {
             return result;
         }
+        Set<String> skippedModules = new HashSet<>();
         try {
             BufferedReader br = new BufferedReader(new FileReader(configuration.skippedModulesFile));
             String line;
             while ((line = br.readLine()) != null) {
-                result.add(line);
+                skippedModules.add(line);
             }
             br.close();
         } catch (FileNotFoundException ex) {
             logger.info("The file set for skippedModulesFile is not found.");
         } catch (IOException ex) {
             logger.info("The file set for skippedModulesFile is empty.");
+        }
+        for (MavenProject proj: mavenSession.getProjects()) {
+            if (skippedModules.contains(proj.toString())) {
+                result.add(proj);
+            }
         }
         return result;
     }
@@ -138,7 +141,7 @@ class UnchangedProjectsRemover {
             bw.newLine();
             bw.close();
         } catch (IOException ex) {
-            logger.info("Exception when writing to the file.");
+            logger.info("Exception when writing skipped modules to the file.");
         }
     }
 
@@ -227,7 +230,7 @@ class UnchangedProjectsRemover {
 
             bw.close();
         } catch (IOException ex) {
-            logger.info("Exception when writing to the file.");
+            logger.info("Exception when writing classpath to the file.");
         }
     }
 
