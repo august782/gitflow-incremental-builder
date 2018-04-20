@@ -115,7 +115,7 @@ class UnchangedProjectsRemover {
         } catch (IOException ex) {
             logger.info("The file set for skippedModulesFile is empty.");
         }
-        for (MavenProject proj: mavenSession.getProjects()) {
+        for (MavenProject proj : mavenSession.getAllProjects()) {
             if (skippedModules.contains(proj.toString())) {
                 result.add(proj);
             }
